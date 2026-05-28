@@ -7,16 +7,39 @@ fn main() {
         .size(800, 800)
         .resizable()
         .build();
-    rl.set_target_fps(30);
+    rl.set_target_fps(60);
     let bg = rl
         .load_texture(&thread, "harmonycobelfather.png")
         .expect("Failed to load title sprite");
     let mut y = rl.get_screen_height() / 2;
-    let text_w = rl.measure_text("this is epic", 20);
+    let text_w = rl.measure_text("use your keybinds.", 20);
+    let cx = rl.measure_text("Successfully copied to clipboard!", 20);
     let mut x = (rl.get_screen_width() - text_w) / 2;
+    let mut sdt = false;
+    let mut copied = false;
+    let mut seconds = 0.0;
     while !rl.window_should_close() {
         let max_x = rl.get_screen_width() - text_w;
         let max_y = rl.get_screen_height() - 20;
+        let mid_x = rl.get_screen_width() / 2;
+        let mid_y = rl.get_screen_height() / 2;
+        let cxm = rl.get_screen_width() - cx;
+        let should_draw_text =
+            rl.is_key_down(KeyboardKey::KEY_LEFT_CONTROL) && rl.is_key_pressed(KeyboardKey::KEY_C);
+        if should_draw_text {
+            rl.set_clipboard_text("what");
+            copied = true
+        }
+        if rl.is_key_down(KeyboardKey::KEY_LEFT_CONTROL) && rl.is_key_pressed(KeyboardKey::KEY_V) {
+            sdt = true;
+        }
+        if copied {
+            seconds = seconds + rl.get_frame_time();
+        }
+        if seconds > 3.0 {
+            copied = false;
+            seconds = 0.0;
+        }
         if rl.is_key_down(KeyboardKey::KEY_S) {
             y = y + 2;
         }
@@ -56,7 +79,19 @@ fn main() {
             0.0,
             Color::POWDERBLUE,
         );
-        d.draw_text("this is epic", x, y, 20, Color::SALMON);
+        if sdt {
+            d.draw_text("what", mid_x, mid_y, 100, Color::BLANCHEDALMOND);
+        }
+        if copied {
+            d.draw_text(
+                "Successfully copied to clipboard!",
+                cxm - 20,
+                20,
+                20,
+                Color::DARKORCHID,
+            )
+        }
+        d.draw_text("use your keybinds.", x, y, 20, Color::SALMON);
         d.clear_background(Color::BLACK);
     }
 }
