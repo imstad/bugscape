@@ -15,9 +15,13 @@ fn main() {
     let text_w = rl.measure_text("use your keybinds.", 20);
     let cx = rl.measure_text("Successfully copied to clipboard!", 20);
     let mut x = (rl.get_screen_width() - text_w) / 2;
-    let mut sdt = false;
+    let mut pasted_text = false;
     let mut copied = false;
     let mut seconds = 0.0;
+    let mut pasted_sec = 0.0;
+    let mut nomore = false;
+    let mut nomore_sec = 0.0;
+    let mut bg_gone = true;
     while !rl.window_should_close() {
         let max_x = rl.get_screen_width() - text_w;
         let max_y = rl.get_screen_height() - 20;
@@ -27,18 +31,40 @@ fn main() {
         let should_draw_text =
             rl.is_key_down(KeyboardKey::KEY_LEFT_CONTROL) && rl.is_key_pressed(KeyboardKey::KEY_C);
         if should_draw_text {
-            rl.set_clipboard_text("what");
+            rl.set_clipboard_text("time.");
             copied = true
         }
         if rl.is_key_down(KeyboardKey::KEY_LEFT_CONTROL) && rl.is_key_pressed(KeyboardKey::KEY_V) {
-            sdt = true;
+            pasted_text = true;
+            nomore = true;
+        }
+        if pasted_text {
+            pasted_sec = pasted_sec + rl.get_frame_time();
+        }
+        if nomore_sec > 2.0 {
+            nomore_sec = 0.0;
+            nomore = false;
+        }
+        if nomore {
+            nomore_sec = nomore_sec + rl.get_frame_time();
+        }
+        if pasted_sec > 2.0 {
+            pasted_text = false;
+            bg_gone = false;
+        }
+        if pasted_sec < 2.0 {
+            nomore = false;
         }
         if copied {
             seconds = seconds + rl.get_frame_time();
         }
-        if seconds > 3.0 {
+        if seconds > 2.0 {
             copied = false;
-            seconds = 0.0;
+            seconds = 0.1;
+        }
+        if seconds < 0.1 {
+            nomore = false;
+            pasted_text = false;
         }
         if rl.is_key_down(KeyboardKey::KEY_S) {
             y = y + 2;
@@ -65,22 +91,26 @@ fn main() {
             y = 0
         }
         let mut d = rl.begin_drawing(&thread);
-        // d.draw_texture_ex(&bg, Vector2::new(0.0, 0.0), 0.0, 1.6, Color::WHITE);
-        d.draw_texture_pro(
-            &bg,
-            Rectangle::new(0.0, 0.0, 500.0, 500.0),
-            Rectangle::new(
+        if bg_gone {
+            d.draw_texture_pro(
+                &bg,
+                Rectangle::new(0.0, 0.0, 500.0, 500.0),
+                Rectangle::new(
+                    0.0,
+                    0.0,
+                    d.get_screen_width() as f32,
+                    d.get_screen_height() as f32,
+                ),
+                Vector2::new(0.0, 0.0),
                 0.0,
-                0.0,
-                d.get_screen_width() as f32,
-                d.get_screen_height() as f32,
-            ),
-            Vector2::new(0.0, 0.0),
-            0.0,
-            Color::POWDERBLUE,
-        );
-        if sdt {
-            d.draw_text("what", mid_x, mid_y, 100, Color::BLANCHEDALMOND);
+                Color::POWDERBLUE,
+            );
+        }
+        if pasted_text {
+            d.draw_text("time.", mid_x, mid_y + 20, 100, Color::BLANCHEDALMOND);
+        }
+        if nomore {
+            d.draw_text("no more.", mid_x, mid_y + 20, 20, Color::DARKRED);
         }
         if copied {
             d.draw_text(
@@ -91,7 +121,9 @@ fn main() {
                 Color::DARKORCHID,
             )
         }
-        d.draw_text("use your keybinds.", x, y, 20, Color::SALMON);
+        if bg_gone {
+            d.draw_text("use your keybinds.", x, y, 20, Color::SALMON);
+        }
         d.clear_background(Color::BLACK);
     }
 }
